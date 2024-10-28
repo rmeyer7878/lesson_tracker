@@ -1,0 +1,19 @@
+<!-- lessons/templates/lessons/home.html -->
+
+{% extends 'lessons/base.html' %}
+{% load static %}
+
+{% block title %}Home - Lesson Tracker{% endblock %}
+
+{% block content %}
+<div class="content-container">
+    <img src="{% static 'lessons/home_image.jpg' %}" alt="Studio Image" class="studio-image" width="300px">
+    <div class="text-content">
+        <p>In private voice lessons, we focus on developing and refining vocal technique through the use of vocal exercises and repertoire. You will learn pieces of music best suited to your current level and interests.</p>
+        <br>
+        <p>In your first lesson, we will determine your current comfortable range, identify challenges you are facing as a singer, and discuss any special projects, upcoming auditions, competitions (NATS, NYSSMA, etc.), or other goals you may have.</p>
+        <br>
+        <p>Coaching sessions are available for singers who would like help preparing for upcoming auditions, concerts, musicals, or any other performance opportunities. I can offer assistance with repertoire selection, diction, melody work, as well as many other aspects of performance preparation. Please add a note at checkout or email me directly to request a coaching session. I work with students of all ages and experience levels and am happy to meet with you and your child (ages 7+) to determine if we are a good fit for voice lessons. In addition to teaching young students foundational, healthy singing technique, I also focus on music-reading, solfege (Do, Re, Mi) to improve pitch and sight-singing, and preparation for school musicals, auditions, or competitions/evaluations.</p>
+    </div>
+</div>
+{% endblock %}

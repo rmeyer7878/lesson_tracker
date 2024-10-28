@@ -1,0 +1,13 @@
+<!-- lessons/templates/lessons/student_edit.html -->
+{% extends 'lessons/base.html' %}
+
+{% block title %}Edit Student{% endblock %}
+
+{% block content %}
+<h1>Edit {{ student.name }}</h1>
+<form method="post">
+    {% csrf_token %}
+    {{ form.as_p }}
+    <button type="submit">Save changes</button>
+</form>
+{% endblock %}

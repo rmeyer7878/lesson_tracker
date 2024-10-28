@@ -1,0 +1,32 @@
+<!-- lessons/templates/lessons/students.html -->
+{% extends 'lessons/base.html' %}
+
+{% block title %}Students - Lesson Tracker{% endblock %}
+
+{% block content %}
+<h1>Students</h1>
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Email</th>
+            <th>Lessons Left</th>
+            <th>Actions</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for student in students %}
+        <tr>
+            <td>{{ student.name }}</td>
+            <td>{{ student.email }}</td>
+            <td>{{ student.lessons_left }}</td>
+            <td>
+                <a href="{% url 'student_detail' student.id %}">View</a> | 
+                <a href="{% url 'student_edit' student.id %}">Edit</a> | 
+                <a href="{% url 'student_delete' student.id %}">Delete</a>
+            </td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% endblock %}

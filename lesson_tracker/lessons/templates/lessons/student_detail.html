@@ -1,0 +1,12 @@
+<!-- lessons/templates/lessons/student_detail.html -->
+{% extends 'lessons/base.html' %}
+
+{% block title %}Student Detail{% endblock %}
+
+{% block content %}
+<h1>{{ student.name }}</h1>
+<p>Email: {{ student.email }}</p>
+<p>Lessons Left: {{ student.lessons_left }}</p>
+<a href="{% url 'student_edit' student.id %}">Edit</a> |
+<a href="{% url 'student_delete' student.id %}">Delete</a>
+{% endblock %}

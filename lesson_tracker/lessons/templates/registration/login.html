@@ -1,0 +1,19 @@
+<!-- lessons/templates/registration/login.html -->
+
+{% extends 'lessons/base.html' %}
+
+{% block title %}Login{% endblock %}
+
+{% block content %}
+<div class="content-container">
+<div class="home-text">
+<h1>Login</h1>
+<br>
+<form method="post">
+    {% csrf_token %}
+    {{ form.as_p }}
+    <button type="submit">Login</button>
+</form>
+</div>
+</div>
+{% endblock %}

@@ -1,0 +1,45 @@
+<!-- lessons/templates/lessons/cart.html -->
+
+{% extends 'lessons/base.html' %}
+{% block content %}
+<h2>Your Cart</h2>
+
+{% if cart %}
+{% load custom_filters %}
+
+<table>
+    <thead>
+        <tr>
+            <th>Lesson</th>
+            <th>Quantity</th>
+            <th>Price</th>
+            <th>Total</th>
+            <th>Actions</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for lesson_id, item in cart.items %}
+        <tr>
+            <td>{{ item.name }}</td>
+            <td>{{ item.quantity }}</td>
+            <td>${{ item.price|floatformat:2 }}</td>
+            <td>${{ item.price|mul:item.quantity|floatformat:2 }}</td>
+            <td>
+                <!-- Place the form inside the loop so each item has its own form -->
+                <form action="{% url 'update_cart' lesson_id=lesson_id %}" method="post">
+                    {% csrf_token %}
+                    <input type="number" name="quantity" value="{{ item.quantity }}" min="0">
+                    <button type="submit">Update</button>
+                </form>
+            </td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+
+<p><strong>Grand Total:</strong> ${{ total|floatformat:2 }}</p>
+<a href="{% url 'checkout' %}">Proceed to Checkout</a>
+{% else %}
+    <p>Your cart is empty.</p>
+{% endif %}
+{% endblock %}

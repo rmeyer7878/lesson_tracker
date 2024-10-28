@@ -1,0 +1,37 @@
+<!-- lessons/templates/lessons/profile.html -->
+
+{% extends 'lessons/base.html' %}
+
+{% block title %}Profile{% endblock %}
+
+{% block content %}
+<div class="content-container">
+<div class="home-text">
+    <h2>{{ student.user.username }}'s Profile</h2>
+
+    <h3>Lessons Available:</h3>
+    <table>
+        <thead>
+            <tr>
+                <th>Lesson Type</th>
+                <th>Duration</th>
+                <th>Quantity</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for student_lesson in student_lessons %}
+                <tr>
+                    <td>{{ student_lesson.lesson_type.name }}</td>
+                    <td>{{ student_lesson.lesson_type.duration }}</td>
+                    <td>{{ student_lesson.quantity }}</td>
+                </tr>
+            {% empty %}
+                <tr>
+                    <td colspan="3">No lessons available.</td>
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+</div>
+{% endblock %}

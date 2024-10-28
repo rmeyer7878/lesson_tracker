@@ -1,0 +1,13 @@
+<!-- lessons/templates/lessons/student_confirm_delete.html -->
+{% extends 'lessons/base.html' %}
+
+{% block title %}Delete Student{% endblock %}
+
+{% block content %}
+<h1>Are you sure you want to delete {{ student.name }}?</h1>
+<form method="post">
+    {% csrf_token %}
+    <button type="submit">Confirm Delete</button>
+    <a href="{% url 'students' %}">Cancel</a>
+</form>
+{% endblock %}
