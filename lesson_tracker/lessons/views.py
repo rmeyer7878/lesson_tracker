@@ -1,47 +1,33 @@
 # lessons/views.py
+
+import stripe
+from django.conf import settings
 from django.shortcuts import render, get_object_or_404, redirect
 from .models import Student, LessonType, StudentLesson
 from .forms import PurchaseLessonForm, StudentForm, LessonForm
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
+from django.db.models.signals import post_save
+from django.dispatch import receiver
+from django.contrib.auth.models import User
 
+stripe.api_key = settings.STRIPE_SECRET_KEY
+
+# Home and About Views
 def home(request):
     return render(request, 'lessons/home.html')
 
 def about(request):
     return render(request, 'lessons/about.html')
 
+# Student Views
 @login_required
 def student_list(request):
     if not request.user.is_superuser:
         return redirect('home')
-    students = Student.objects.all()
+    #students = Student.objects.all()
+    students = Student.objects.filter(user=request.user)
     return render(request, 'lessons/student_list.html', {'students': students})
-
-def email(request):
-    return render(request, 'lessons/email.html')
-
-def lesson_list(request):
-    lessons = LessonType.objects.all()
-    return render(request, 'lessons/lesson_list.html', {'lessons': lessons})
-
-def lesson_detail(request, lesson_id):
-    lesson = get_object_or_404(LessonType, id=lesson_id)
-    return render(request, 'lessons/lesson_detail.html', {'lesson': lesson})
-
-def purchase_lessons(request):
-    lesson_types = LessonType.objects.all()
-    return render(request, 'lessons/purchase_lessons.html', {'lesson_types': lesson_types})
-
-def purchase_more(request):
-    if request.method == 'POST':
-        form = PurchaseLessonForm(request.POST)
-        if form.is_valid():
-            form.save()
-            return redirect('students')
-    else:
-        form = PurchaseLessonForm()
-    return render(request, 'lessons/purchase_more.html', {'form': form})
 
 def student_detail(request, pk):
     student = get_object_or_404(Student, pk=pk)
@@ -67,7 +53,7 @@ def student_delete(request, pk):
 
 def student_lessons(request, pk):
     student = get_object_or_404(Student, pk=pk)
-    lessons = student.lessons.all()
+    lessons = student.studentlesson_set.all()  # Retrieves all StudentLesson records related to the student
 
     if request.method == 'POST':
         form = LessonForm(request.POST)
@@ -85,37 +71,31 @@ def student_lessons(request, pk):
         'form': form,
     })
 
+# Profile View
 @login_required
 def profile(request):
-    try:
-        student = Student.objects.get(user=request.user)
-        student_lessons = StudentLesson.objects.filter(student=student)  # Get all lesson types for the student
-    except Student.DoesNotExist:
-        return render(request, 'lessons/no_profile.html')  # Customize as needed
-
-    return render(request, 'lessons/profile.html', {'student': student, 'student_lessons': student_lessons})
-
-def paypal(request):
-    return render(request, 'lessons/paypal.html')
-
-def purchase_success(request):
-    return render(request, 'lessons/purchase_success.html')
-
-def purchase_cancel(request):
-    return render(request, 'lessons/purchase_cancel.html')
+    # Fetch all students associated with the logged-in user
+    students = request.user.students.all()  # Using related_name='students' from the ForeignKey
+    return render(request, 'lessons/profile.html', {'students': students})
 
 def cart_view(request):
     cart = request.session.get('cart', {})
     total = sum(item['price'] * item['quantity'] for item in cart.values())
+    
+    # Update the cart count in the session based on the current cart contents
+    request.session['cart_count'] = sum(item['quantity'] for item in cart.values())
+    request.session.modified = True  # Ensure session data is saved
+
     return render(request, 'lessons/cart.html', {'cart': cart, 'total': total})
 
+
+@login_required
 def add_to_cart(request, lesson_id):
     lesson = get_object_or_404(LessonType, id=lesson_id)
     
-    # Get the cart from session or initialize it as an empty dictionary
+    # Get the cart from the session or initialize it as an empty dictionary
     cart = request.session.get('cart', {})
 
-    # Check if the lesson is already in the cart
     lesson_id_str = str(lesson_id)  # Ensure lesson_id is treated as a string in session data
     if lesson_id_str in cart:
         # If lesson is already in the cart, increment the quantity
@@ -128,82 +108,67 @@ def add_to_cart(request, lesson_id):
             'quantity': 1,
         }
 
-    # Save the updated cart to the session
+    # Update the session cart
     request.session['cart'] = cart
-    request.session.modified = True  # Mark the session as modified to ensure it’s saved
 
-    return redirect('store')  # Redirect to the store or another page after adding to cart
+    # Update the cart count in the session
+    request.session['cart_count'] = sum(item['quantity'] for item in cart.values())
+
+    # Mark the session as modified to ensure it’s saved
+    request.session.modified = True
+
+    return redirect('store')
 
 @login_required
 def checkout_view(request):
     cart = request.session.get('cart', {})
-
     if not cart:
         messages.error(request, "Your cart is empty.")
-        return redirect('store')
+        return redirect('store')  # Redirect to the store if the cart is empty
 
-    try:
-        student = Student.objects.get(user=request.user)
-    except Student.DoesNotExist:
-        messages.error(request, "No student profile found.")
-        return redirect('store')
+    total = sum(item['price'] * item['quantity'] for item in cart.values())
 
-    for lesson_id, item in cart.items():
-        lesson_type = get_object_or_404(LessonType, id=lesson_id)
-        quantity = item['quantity']
-        
-        # Get or create a StudentLesson entry for the student and lesson type
-        student_lesson, created = StudentLesson.objects.get_or_create(
-            student=student,
-            lesson_type=lesson_type
-        )
-        
-        # Increase the lesson count
-        student_lesson.quantity += quantity
-        student_lesson.save()
+    # Create line items for Stripe
+    line_items = [
+        {
+            'price_data': {
+                'currency': 'usd',
+                'product_data': {
+                    'name': item['name'],
+                },
+                'unit_amount': int(item['price'] * 100),  # Amount in cents
+            },
+            'quantity': item['quantity'],
+        }
+        for item in cart.values()
+    ]
 
-    # Clear the cart after checkout
-    request.session['cart'] = {}
+    # Create a Stripe checkout session
+    session = stripe.checkout.Session.create(
+        payment_method_types=['card'],
+        line_items=line_items,
+        mode='payment',
+        success_url=request.build_absolute_uri('/checkout/success/'),
+        cancel_url=request.build_absolute_uri('/checkout/cancel/'),
+    )
+
+    return render(request, 'lessons/checkout.html', {
+        'cart': cart,
+        'total': total,
+        'stripe_public_key': settings.STRIPE_PUBLIC_KEY,
+        'checkout_session_id': session.id,
+    })
+
+def checkout_success(request):
+    request.session['cart'] = {}  # Clear the cart
+    request.session['cart_count'] = 0
     request.session.modified = True
+    messages.success(request, "Thank you! Your purchase was successful.")
+    return redirect('profile')  # Redirect to the profile or another page
 
-    messages.success(request, "Checkout complete! Your lessons have been added to your account.")
-    return redirect('profile')
-
-
-# @login_required
-# def checkout_view(request):
-#     cart = request.session.get('cart', {})
-    
-#     if not cart:
-#         messages.warning(request, "Your cart is empty.")
-#         return redirect('store')
-
-#     student = Student.objects.get(user=request.user)
-
-#     # Loop through the cart and update the student's lessons
-#     for lesson_id, item in cart.items():
-#         try:
-#             lesson_type = LessonType.objects.get(id=lesson_id)
-#             # Assuming `student` has a `lessons_left` or similar field to track purchased lessons
-#             student.lessons_left += item['quantity']  # Increase total lessons based on cart quantity
-#             student.save()
-#         except LessonType.DoesNotExist:
-#             messages.error(request, "Lesson type not found.")
-#             continue
-
-#     # Clear the cart after checkout
-#     request.session['cart'] = {}
-#     request.session.modified = True
-
-#     messages.success(request, "Checkout completed successfully, and your lessons have been added.")
-#     return render(request, 'lessons/checkout_success.html')
-
-
-
-
-def store_view(request):
-    lessons = LessonType.objects.all()
-    return render(request, 'lessons/store.html', {'lessons': lessons})
+def checkout_cancel(request):
+    messages.error(request, "Payment was canceled.")
+    return redirect('cart')  # Redirect back to the cart
 
 def update_cart(request, lesson_id):
     if request.method == 'POST':
@@ -220,3 +185,23 @@ def update_cart(request, lesson_id):
         request.session.modified = True
 
     return redirect('cart')
+
+# Store View
+def store_view(request):
+    lessons = LessonType.objects.all()
+    return render(request, 'lessons/store.html', {'lessons': lessons})
+
+# Signal for Profile Creation
+@receiver(post_save, sender=User)
+def create_student_profile(sender, instance, created, **kwargs):
+    if created and not instance.is_superuser:
+        Student.objects.create(user=instance)
+
+# lessons/views.py
+def email(request):
+    # This is a placeholder view for the "email" page
+    return render(request, 'lessons/email.html')
+
+def lesson_list(request):
+    lessons = LessonType.objects.all()
+    return render(request, 'lessons/lesson_list.html', {'lessons': lessons})

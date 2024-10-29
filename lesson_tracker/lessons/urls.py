@@ -18,14 +18,9 @@ urlpatterns = [
 
     # Lesson listing and purchasing
     path('lessons/', views.lesson_list, name='lesson_list'),  # List of all available lessons
-    path('purchase_more/', views.purchase_more, name='purchase_more'),  # Purchase additional lessons
-    path('purchase/', views.purchase_lessons, name='purchase_lessons'),  # Main purchase page
-    path('purchase/success/', views.purchase_success, name='purchase_success'),  # Success page
-    path('purchase/cancel/', views.purchase_cancel, name='purchase_cancel'),  # Cancel page
-    path('paypal/', views.paypal, name='paypal'),  # PayPal payment page
+    path('purchase/', views.add_to_cart, name='purchase_lessons'),  # Main purchase page
 
     # Lesson details and store
-    path('store/<int:lesson_id>/', views.lesson_detail, name='lesson_detail'),  # Detailed view of a lesson type
     path('store/', views.store_view, name='store'),  # Store listing all available lessons
     
     # User profile
@@ -36,4 +31,7 @@ urlpatterns = [
     path('add-to-cart/<int:lesson_id>/', views.add_to_cart, name='add_to_cart'),  # Add a lesson to cart
     path('update-cart/<int:lesson_id>/', views.update_cart, name='update_cart'),  # Update cart item quantity
     path('checkout/', views.checkout_view, name='checkout'),  # Checkout page
+    path('checkout/success/', views.checkout_success, name='checkout_success'),
+    path('checkout/cancel/', views.checkout_cancel, name='checkout_cancel'),
+
 ]

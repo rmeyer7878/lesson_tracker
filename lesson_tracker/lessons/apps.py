@@ -5,3 +5,4 @@ class LessonsConfig(AppConfig):
     name = 'lessons'
     def ready(self):
         import lessons.signals  # Ensures signals are connected
+

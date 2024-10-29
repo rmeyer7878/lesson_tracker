@@ -1,37 +1,50 @@
 <!-- lessons/templates/lessons/profile.html -->
-
 {% extends 'lessons/base.html' %}
 
-{% block title %}Profile{% endblock %}
-
 {% block content %}
-<div class="content-container">
-<div class="home-text">
-    <h2>{{ student.user.username }}'s Profile</h2>
 
-    <h3>Lessons Available:</h3>
-    <table>
-        <thead>
-            <tr>
-                <th>Lesson Type</th>
-                <th>Duration</th>
-                <th>Quantity</th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for student_lesson in student_lessons %}
-                <tr>
-                    <td>{{ student_lesson.lesson_type.name }}</td>
-                    <td>{{ student_lesson.lesson_type.duration }}</td>
-                    <td>{{ student_lesson.quantity }}</td>
-                </tr>
-            {% empty %}
-                <tr>
-                    <td colspan="3">No lessons available.</td>
-                </tr>
-            {% endfor %}
-        </tbody>
-    </table>
-</div>
-</div>
+
+{% if students %}
+    <ul>
+        {% for student in students %}       
+        {% if student.parent.username != 'defaultuser' %}
+            <li>{{ student.name }}</li>
+<table>
+    <thead>
+        <tr>
+            <th>Lesson Type</th>
+            <th>Quantity</th>
+            <th>Scheduled</th>
+            <th>Date & Time</th>
+        </tr>
+    </thead>
+    <h2>Your Purchased Lessons</h2>
+    <ul>
+        {% for lesson in lessons %}
+            <li>{{ lesson.lesson_type.name }}: {{ lesson.quantity }} lessons</li>
+        {% endfor %}
+    </ul>
+    <tbody>
+        {% for lesson in student_lessons %}
+        <tr>
+            <td>{{ lesson.lesson_type.name }}</td>
+            <td>{{ lesson.quantity }}</td>
+            <td>{{ lesson.scheduled|yesno:"Yes,No" }}</td>
+            <td>
+                {% if lesson.scheduled %}
+                    {{ lesson.scheduled_datetime|date:"Y-m-d H:i" }}
+                {% else %}
+                    Not scheduled
+                {% endif %}
+            </td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% endif %}
+{% endfor %}
+</ul>
+{% else %}
+<p>You have no students listed.</p>
+{% endif %}
 {% endblock %}

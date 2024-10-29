@@ -22,9 +22,6 @@
             <a href="{% url 'store' %}">Voice Lessons</a>
             <a href="{% url 'cart' %}" class="cart-icon" aria-label="Cart">
                 🛒 
-                <span class="cart-count">
-                    {{ request.session.cart_count|default:0 }}
-                </span>
             </a>
             <form action="{% url 'logout' %}" method="post" style="display:inline;">
                 {% csrf_token %}

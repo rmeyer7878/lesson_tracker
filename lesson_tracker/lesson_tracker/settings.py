@@ -147,3 +147,6 @@ LOGOUT_REDIRECT_URL = '/'
 
 PAYPAL_CLIENT_ID = 'your-paypal-client-id'
 PAYPAL_CLIENT_SECRET = 'your-paypal-client-secret'
+
+STRIPE_PUBLIC_KEY = 'pk_live_51QFGwpGDL4lvksN9BTMaglU0yBsMdtMwajbRRmmqZxrDJ8KeG4awlO1uRF0KmxCRsP6JHaocRLR8W5iWircABVe7008c6igFvO'
+STRIPE_SECRET_KEY = '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'

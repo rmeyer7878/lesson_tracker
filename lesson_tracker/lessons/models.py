@@ -2,14 +2,20 @@
 from django.db import models
 from django.contrib.auth.models import User
 
+def get_default_user():
+    try:
+        return User.objects.get(username='defaultuser').id
+    except User.DoesNotExist:
+        return None  # Or raise an appropriate error
+
 class Student(models.Model):
-    user = models.OneToOneField(User, on_delete=models.CASCADE, null=True, blank=True)  # Allow null temporarily
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='students', default=get_default_user, null=True)
     name = models.CharField(max_length=100)
     email = models.EmailField()
     lessons_left = models.IntegerField(default=0)
 
     def __str__(self):
-        return self.name
+        return self.user.username
 
 class Lesson(models.Model):
     student = models.ForeignKey(Student, on_delete=models.CASCADE, related_name='lessons')
@@ -53,6 +59,16 @@ class LessonType(models.Model):
     def __str__(self):
         return f"{self.name} - {self.get_duration_display()} (${self.display_price()})"
 
+class StudentLesson(models.Model):
+    student = models.ForeignKey(User, on_delete=models.CASCADE)
+    lesson_type = models.ForeignKey(LessonType, on_delete=models.CASCADE)
+    quantity = models.PositiveIntegerField(default=0)
+    scheduled = models.BooleanField(default=False)
+    scheduled_datetime = models.DateTimeField(null=True, blank=True)
+
+    def __str__(self):
+        return f"{self.lesson_type.name} for {self.student.username}"
+
 class EmailTemplate(models.Model):
     name = models.CharField(max_length=100)
     subject = models.CharField(max_length=200)
@@ -74,10 +90,5 @@ class StudentProfile(models.Model):
     def __str__(self):
         return f"{self.user.username}'s Profile"
 
-class StudentLesson(models.Model):
-    student = models.ForeignKey(Student, on_delete=models.CASCADE)
-    lesson_type = models.ForeignKey(LessonType, on_delete=models.CASCADE)
-    quantity = models.IntegerField(default=0)  # Track the number of lessons left for this type
 
-    def __str__(self):
-        return f"{self.student} - {self.lesson_type} ({self.quantity})"
+
