@@ -148,8 +148,5 @@ LOGIN_URL = '/login/'
 LOGIN_REDIRECT_URL = '/profile/'
 LOGOUT_REDIRECT_URL = '/'
 
-PAYPAL_CLIENT_ID = 'your-paypal-client-id'
-PAYPAL_CLIENT_SECRET = 'your-paypal-client-secret'
-
 STRIPE_API_KEY = os.getenv('STRIPE_API_KEY')
 SECRET_KEY = os.getenv('SECRET_KEY')
