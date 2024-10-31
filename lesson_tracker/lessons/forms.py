@@ -1,45 +1,17 @@
-# # lessons/forms.py
-
-# from django import forms
-# from .models import Lesson, LessonPackage
-
-# class TrackLessonForm(forms.ModelForm):
-#     class Meta:
-#         model = Lesson
-#         fields = ['student', 'date', 'notes']
-
-# class PurchaseLessonForm(forms.ModelForm):
-#     class Meta:
-#         model = LessonPackage  # Assuming you have a LessonPackage model
-#         fields = ['student', 'package_name', 'lessons_purchased']
-# lessons/forms.py
-
 from django import forms
-from .models import LessonPackage, Lesson, Student
+from .models import LessonType, StudentProfile, User
 
 class PurchaseLessonForm(forms.ModelForm):
     class Meta:
-        model = LessonPackage
-        fields = ['student', 'package_name', 'lessons_purchased']
+        model = LessonType
+        fields = ['name', 'duration', 'price', 'sale_price', 'description']  # Include only valid fields
 
-class TrackLessonForm(forms.ModelForm):
-    class Meta:
-        model = Lesson
-        fields = ['student', 'date', 'notes']
-        
 class StudentForm(forms.ModelForm):
     class Meta:
-        model = Student
-        fields = ['name', 'email', 'lessons_left']  # Fields to include in the form
-
-    def clean_lessons_left(self):
-        # Optional validation to ensure lessons_left is non-negative
-        lessons_left = self.cleaned_data.get('lessons_left')
-        if lessons_left < 0:
-            raise forms.ValidationError("Lessons left cannot be negative.")
-        return lessons_left
-    
-class LessonForm(forms.ModelForm):
+        model = StudentProfile
+        fields = ['lessons_purchased', 'preferred_lesson_duration']  # Update with actual fields in StudentProfile
+        
+class UserForm(forms.ModelForm):
     class Meta:
-        model = Lesson
-        fields = ['date', 'notes']
+        model = User
+        fields = ['username', 'email']  # or add 'first_name', 'last_name' as needed

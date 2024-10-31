@@ -9,11 +9,14 @@ https://docs.djangoproject.com/en/5.1/topics/settings/
 For the full list of settings and their values, see
 https://docs.djangoproject.com/en/5.1/ref/settings/
 """
-
+import os
 from pathlib import Path
 
 # lesson_tracker/settings.py
 from celery.schedules import crontab
+from dotenv import load_dotenv
+
+load_dotenv()
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -141,6 +144,7 @@ CELERY_BEAT_SCHEDULE = {
         'schedule': crontab(hour=0, minute=0),  # Runs every day at midnight
     },
 }
+LOGIN_URL = '/login/'
 
 LOGIN_REDIRECT_URL = '/profile/'
 LOGOUT_REDIRECT_URL = '/'
@@ -148,5 +152,5 @@ LOGOUT_REDIRECT_URL = '/'
 PAYPAL_CLIENT_ID = 'your-paypal-client-id'
 PAYPAL_CLIENT_SECRET = 'your-paypal-client-secret'
 
-STRIPE_PUBLIC_KEY = 'pk_live_51QFGwpGDL4lvksN9BTMaglU0yBsMdtMwajbRRmmqZxrDJ8KeG4awlO1uRF0KmxCRsP6JHaocRLR8W5iWircABVe7008c6igFvO'
-STRIPE_SECRET_KEY = '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'
+STRIPE_API_KEY = os.getenv('STRIPE_API_KEY')
+SECRET_KEY = os.getenv('SECRET_KEY')

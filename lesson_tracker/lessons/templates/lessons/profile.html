@@ -2,49 +2,38 @@
 {% extends 'lessons/base.html' %}
 
 {% block content %}
+<h2>Your Profile</h2>
 
-
-{% if students %}
-    <ul>
-        {% for student in students %}       
-        {% if student.parent.username != 'defaultuser' %}
-            <li>{{ student.name }}</li>
-<table>
-    <thead>
-        <tr>
-            <th>Lesson Type</th>
-            <th>Quantity</th>
-            <th>Scheduled</th>
-            <th>Date & Time</th>
-        </tr>
-    </thead>
-    <h2>Your Purchased Lessons</h2>
-    <ul>
-        {% for lesson in lessons %}
-            <li>{{ lesson.lesson_type.name }}: {{ lesson.quantity }} lessons</li>
-        {% endfor %}
-    </ul>
-    <tbody>
-        {% for lesson in student_lessons %}
-        <tr>
-            <td>{{ lesson.lesson_type.name }}</td>
-            <td>{{ lesson.quantity }}</td>
-            <td>{{ lesson.scheduled|yesno:"Yes,No" }}</td>
-            <td>
-                {% if lesson.scheduled %}
-                    {{ lesson.scheduled_datetime|date:"Y-m-d H:i" }}
-                {% else %}
-                    Not scheduled
-                {% endif %}
-            </td>
-        </tr>
-        {% endfor %}
-    </tbody>
-</table>
-{% endif %}
-{% endfor %}
-</ul>
+<h3>Your Lesson Credits</h3>
+{% if credits %}
+    <table>
+        <thead>
+            <tr>
+                <th>Lesson Type</th>
+                <th>Credits Available</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for credit in credits %}
+                <tr>
+                    <td>{{ credit.lesson_type.name }}</td>
+                    <td>{{ credit.credits }}</td>
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
 {% else %}
-<p>You have no students listed.</p>
+    <p>You have no available lesson credits.</p>
+{% endif %}
+
+<h3>Your Recurring Weekly Lesson</h3>
+{% if recurring_lesson %}
+    <p>
+        <strong>Lesson Type:</strong> {{ recurring_lesson.lesson_type.name }}<br>
+        <strong>Day:</strong> {{ recurring_lesson.day_of_week }}<br>
+        <strong>Time:</strong> {{ recurring_lesson.time|date:"H:i" }}
+    </p>
+{% else %}
+    <p>You do not have a recurring weekly lesson scheduled.</p>
 {% endif %}
 {% endblock %}
