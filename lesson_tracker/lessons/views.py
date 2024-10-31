@@ -3,7 +3,7 @@
 import stripe
 from django.conf import settings
 from django.shortcuts import render, get_object_or_404, redirect
-from .models import StudentProfile, LessonType, UserCredits, RecurringLesson
+from .models import StudentProfile, LessonType, UserCredits, ScheduledLesson
 from .forms import PurchaseLessonForm, StudentForm
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
@@ -67,30 +67,12 @@ def profile(request):
     # Get the credits for each lesson type, sorted by lesson type name
     credits = UserCredits.objects.filter(user=request.user).order_by('lesson_type__name')
     # Get the recurring weekly lesson for the user
-    recurring_lesson = RecurringLesson.objects.filter(user=request.user).first()
+    scheduled_lesson = ScheduledLesson.objects.filter(user=request.user).first()
 
     return render(request, 'lessons/profile.html', {
         'credits': credits,
-        'recurring_lesson': recurring_lesson
+        'scheduled_lesson': scheduled_lesson
     })
-
-# def profile(request):
-#     # Get all students linked to the logged-in user
-#     credits = UserCredits.objects.filter(user=request.user)
-#     students = Student.objects.filter(user=request.user)
-#     next_lesson = ScheduledLesson.objects.filter(user=request.user, is_cancelled=False).order_by('scheduled_time').first()
-    
-#     # Get all StudentLesson instances for these students
-#     #student_lessons = StudentLesson.objects.filter(student__in=students)
-#     student_lessons = StudentLesson.objects.filter(student=request.user).select_related('lesson_type')
-
-#     return render(request, 'lessons/profile.html', {
-#         'students': students,
-#         'student_lessons': student_lessons,
-#         'credits': credits, 
-#         'next_lesson': next_lesson
-#     })
-
 
 def cart_view(request):
     cart = request.session.get('cart', {})

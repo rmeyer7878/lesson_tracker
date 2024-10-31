@@ -26,14 +26,22 @@
     <p>You have no available lesson credits.</p>
 {% endif %}
 
-<h3>Your Recurring Weekly Lesson</h3>
-{% if recurring_lesson %}
-    <p>
-        <strong>Lesson Type:</strong> {{ recurring_lesson.lesson_type.name }}<br>
-        <strong>Day:</strong> {{ recurring_lesson.day_of_week }}<br>
-        <strong>Time:</strong> {{ recurring_lesson.time|date:"H:i" }}
-    </p>
+<h3>Your Scheduled Lesson</h3>
+{% if scheduled_lesson  %}
+    {% if scheduled_lesson.is_cancelled %}
+        <p>
+            <strong>The following lesson has been cancelled:</strong><br>
+            <strong>Lesson Type:</strong> {{ scheduled_lesson.lesson_type.name }}<br>
+            <strong>Date:</strong> {{ scheduled_lesson.scheduled_time }}<br>
+        </p>
+    {% else %}
+        <p>
+            <strong>Lesson Type:</strong> {{ scheduled_lesson.lesson_type.name }}<br>
+            <strong>Date:</strong> {{ scheduled_lesson.scheduled_time }}<br>
+        </p>
+    {% endif %}
+
 {% else %}
-    <p>You do not have a recurring weekly lesson scheduled.</p>
+    <p>You do not have a lesson scheduled.</p>
 {% endif %}
 {% endblock %}

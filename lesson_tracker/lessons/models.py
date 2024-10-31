@@ -38,16 +38,6 @@ class LessonType(models.Model):
     def __str__(self):
         return f"{self.name} - {self.get_duration_display()} (${self.display_price()})"
 
-# RecurringLesson represents the regular weekly lessons scheduled by the superuser for each student
-class RecurringLesson(models.Model):
-    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="recurring_lessons")
-    lesson_type = models.ForeignKey(LessonType, on_delete=models.CASCADE)
-    day_of_week = models.CharField(max_length=10)  # e.g., 'Monday'
-    time = models.TimeField()  # Time of the weekly lesson
-
-    def __str__(self):
-        return f"Weekly {self.lesson_type.name} for {self.user.username} on {self.day_of_week} at {self.time}"
-
 # ScheduledLesson represents individual lessons scheduled by the superuser
 class ScheduledLesson(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="scheduled_lessons")
