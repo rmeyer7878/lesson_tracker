@@ -3,17 +3,21 @@
 import stripe
 from django.conf import settings
 from django.shortcuts import render, get_object_or_404, redirect
-from .models import StudentProfile, LessonType, UserCredits, ScheduledLesson
+from .models import StudentProfile, LessonType
 from .forms import PurchaseLessonForm, StudentForm
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.db.models.signals import post_save
+from django.db import transaction
 from django.dispatch import receiver
 from django.contrib.auth.models import User
 from django.urls import reverse
 from django.http import HttpResponseRedirect
+import logging
 
 stripe.api_key = settings.SECRET_KEY
+
+logger = logging.getLogger('myapp')  # Replace 'myapp' with the name you set in LOGGING configuration
 
 # Home and About Views
 def home(request):
@@ -64,15 +68,14 @@ def student_lessons(request, pk):
 
 @login_required
 def profile(request):
-    # Get the credits for each lesson type, sorted by lesson type name
-    credits = UserCredits.objects.filter(user=request.user).order_by('lesson_type__name')
-    # Get the recurring weekly lesson for the user
-    scheduled_lesson = ScheduledLesson.objects.filter(user=request.user).first()
+    student_profile = StudentProfile.objects.get(user=request.user)
+    lessons_purchased = student_profile.lessons_purchased  # Total lessons purchased
 
     return render(request, 'lessons/profile.html', {
-        'credits': credits,
-        'scheduled_lesson': scheduled_lesson
+        'lessons_purchased': lessons_purchased,
+        'student_profile': student_profile
     })
+
 
 def cart_view(request):
     cart = request.session.get('cart', {})
@@ -115,79 +118,272 @@ def add_to_cart(request, lesson_id):
 
     return redirect('store')
 
+# @login_required
+# @transaction.atomic  # Ensures all changes are saved together or not at all
+# def checkout_view(request):
+#     logger.info("Checkout view accessed")
+#     cart = request.session.get('cart', {})
+#     total_lessons = sum(item['quantity'] for item in cart.values())
+#     total_amount = int(sum(item['price'] * item['quantity'] for item in cart.values()) * 100)  # Convert to cents
+
+#     # If there are no items in the cart, redirect with a message
+#     if total_lessons == 0 or total_amount == 0:
+#         messages.info(request, "Your cart is empty or has invalid items.")
+#         return redirect('cart')
+
+#     # Check if the user has a profile and update lesson credits
+#     try:
+#         profile = request.user.student_profile
+#         profile.lessons_purchased += total_lessons
+#         profile.save()
+
+#         # Clear the cart after saving profile information
+#         request.session['cart'] = {}
+#         request.session['cart_count'] = 0
+
+#         # Create the Stripe PaymentIntent
+#         payment_intent = stripe.PaymentIntent.create(
+#             amount=total_amount,
+#             currency='usd',
+#             payment_method_types=['card'],
+#         )
+#         request.session['payment_intent_id'] = payment_intent['id']
+#         logger.info(f"PaymentIntent created: {payment_intent['id']}")
+
+#         # Render checkout page with Stripe payment details
+#         return render(request, 'checkout.html', {
+#             'stripe_public_key': settings.STRIPE_PUBLIC_KEY,
+#             'client_secret': payment_intent['client_secret']
+#         })
+#     except stripe.error.StripeError as e:
+#         logger.error(f"Stripe error during PaymentIntent creation: {e.user_message}")
+#         return redirect('cart')
+#     except StudentProfile.DoesNotExist:
+#         logger.error("Student profile not found for user.")
+#         return redirect('cart')
+#     except Exception as e:
+#         logger.error(f"Unexpected error during checkout: {e}")
+#         return redirect('cart')
+
+
+# @login_required
+# def checkout_view(request):
+#     cart = request.session.get('cart', {})
+#     total_amount = sum(item['price'] * item['quantity'] for item in cart.values())
+    
+#     # Create a PaymentIntent regardless of the request method to ensure `client_secret` is available
+#     intent = stripe.PaymentIntent.create(
+#         amount=int(total_amount * 100),  # Stripe expects the amount in cents
+#         currency="usd",
+#     )
+    
+#     if request.method == 'POST':
+#         try:
+#             # Process Stripe payment (already created intent)
+#             stripe.PaymentIntent.confirm(
+#                 intent.id,
+#                 payment_method=request.POST['payment_method_id']
+#             )
+
+#             # Update lessons_purchased field in StudentProfile
+#             for lesson_id, item in cart.items():
+#                 quantity = item['quantity']
+#                 lessons_purchased, created = StudentProfile.objects.get_or_create(
+#                     user=request.user,
+#                     defaults={'lessons_purchased': quantity}
+#                 )
+#                 if not created:
+#                     lessons_purchased.lessons_purchased += quantity
+#                     lessons_purchased.save()
+            
+#             # Clear the cart after successful payment
+#             request.session['cart'] = {}
+#             request.session['cart_count'] = 0
+#             request.session.modified = True
+#             return redirect('checkout_success')  # Redirect to success page
+
+#         except stripe.error.CardError as e:
+#             messages.error(request, f"Payment error: {e.user_message}")
+#             return redirect('checkout')
+
+#     # For both GET and POST, render the checkout page with `client_secret`
+#     total = sum(item['price'] * item['quantity'] for item in cart.values())
+#     return render(request, 'lessons/checkout.html', {
+#         'cart': cart,
+#         'total': total,
+#         'stripe_public_key': settings.STRIPE_API_KEY,
+#         'client_secret': intent.client_secret,  # Pass client secret to the template
+#     })
+# @login_required
+# def checkout_view(request):
+#     cart = request.session.get('cart', {})
+#     total_amount = sum(item['price'] * item['quantity'] for item in cart.values())
+    
+#     # Create a PaymentIntent to ensure `client_secret` is available
+#     intent = stripe.PaymentIntent.create(
+#         amount=int(total_amount * 100),  # Stripe expects the amount in cents
+#         currency="usd",
+#     )
+    
+#     if request.method == 'POST':
+#         try:
+#             # Confirm the PaymentIntent
+#             stripe.PaymentIntent.confirm(
+#                 intent.id,
+#                 payment_method=request.POST['payment_method_id']
+#             )
+
+#             # Update lessons_purchased in StudentProfile
+#             for lesson_id, item in cart.items():
+#                 quantity = item['quantity']
+#                 lessons_purchased, created = StudentProfile.objects.get_or_create(
+#                     user=request.user,
+#                     defaults={'lessons_purchased': quantity}
+#                 )
+#                 if not created:
+#                     lessons_purchased.lessons_purchased += quantity
+#                     lessons_purchased.save()
+            
+#             # Clear the cart after successful payment
+#             request.session['cart'] = {}
+#             request.session['cart_count'] = 0
+#             request.session.modified = True
+#             return redirect('checkout_success')  # Redirect to success page
+
+#         except stripe.error.CardError as e:
+#             messages.error(request, f"Payment error: {e.user_message}")
+#             return redirect('checkout')
+
+#     # For GET and POST, render the checkout page with `client_secret`
+#     total = sum(item['price'] * item['quantity'] for item in cart.values())
+#     return render(request, 'lessons/checkout.html', {
+#         'cart': cart,
+#         'total': total,
+#         'stripe_public_key': settings.STRIPE_API_KEY,
+#         'client_secret': intent.client_secret,  # Pass client secret to the template
+#     })
+# @login_required
+# def checkout_view(request):
+#     cart = request.session.get('cart', {})
+    
+#     if request.method == 'POST':
+#         # Stripe payment processing
+#         total_amount = sum(item['price'] * item['quantity'] for item in cart.values())
+#         try:
+#             stripe.PaymentIntent.create(
+#                 amount=int(total_amount * 100),  # Stripe expects the amount in cents
+#                 currency="usd",
+#                 payment_method=request.POST['payment_method_id'],
+#                 confirm=True
+#             )
+            
+#             # Update the lessons_purchased field in StudentProfile
+#             # Update the cart count in the session based on the current cart contents
+#             request.session['cart_count'] = sum(item['quantity'] for item in cart.values())
+#             request.session.modified = True  # Ensure session data is saved
+#             # Update or create UserCredits entries
+#             for lesson_id, item in cart.items():
+#                 quantity = item['quantity']
+        
+#                 lessons_purchased, created = StudentProfile.objects.get_or_create(
+#                 user=request.user,
+#                 defaults={'lessons_purchased': quantity}
+#                 )
+#             if not created:
+#                 lessons_purchased.lessons_purchased += quantity
+#                 lessons_purchased.save()    
+#             request.session['lessons_purchased'] = request.session['lessons_purchased'] + quantity
+        
+#             # Clear the cart after successful payment
+#             request.session['cart'] = {}
+#             request.session['cart_count'] = 0
+#             request.session.modified = True
+#             return redirect('profile')
+
+#         except stripe.error.CardError as e:
+#             messages.error(request, f"Payment error: {e.user_message}")
+#             return redirect('checkout')
+
+#     total = sum(item['price'] * item['quantity'] for item in cart.values())
+#     line_items = [
+#         {
+#             'price_data': {
+#                 'currency': 'usd',
+#                 'product_data': {
+#                     'name': item['name'],
+#                 },
+#                 'unit_amount': int(item['price'] * 100),  # Amount in cents
+#             },
+#             'quantity': item['quantity'],
+#         }
+#         for item in cart.values()
+#     ]
+
+#     # Create a Stripe checkout session
+#     session = stripe.checkout.Session.create(
+#         payment_method_types=['card'],
+#         line_items=line_items,
+#         mode='payment',
+#         success_url=request.build_absolute_uri('/profile/'),
+#         cancel_url=request.build_absolute_uri('/profile/'),
+#     )
+
+#     return render(request, 'lessons/checkout.html', {
+#         'cart': cart,
+#         'total': total,
+#         'stripe_public_key': settings.STRIPE_API_KEY,
+#         'checkout_session_id': session.id,
+#     }
+#     )
 @login_required
 def checkout_view(request):
     cart = request.session.get('cart', {})
-    if request.method == 'POST':
-        # Stripe payment processing
-        total_amount = sum(item['price'] * item['quantity'] for item in cart.values())
-        try:
-            stripe.PaymentIntent.create(
-                amount=int(total_amount * 100),  # Stripe expects amount in cents
-                currency="usd",
-                payment_method=request.POST['payment_method_id'],
-                confirm=True
-            )
-            
-            # Update or create UserCredits entries
-            for lesson_id, item in cart.items():
-                lesson_type = get_object_or_404(LessonType, id=lesson_id)
-                quantity = item['quantity']
-                
-                # Update credits in UserCredits
-                user_credit, created = UserCredits.objects.get_or_create(
-                    user=request.user,
-                    lesson_type=lesson_type,
-                    defaults={'credits': quantity}
-                )
-                
-                if not created:
-                    user_credit.credits += quantity
-                    user_credit.save()
-
-            # Clear the cart after successful payment
-            request.session['cart'] = {}
-            request.session['cart_count'] = 0
-            request.session.modified = True
-            messages.success(request, "Checkout complete! Your credits have been updated.")
-            return redirect('profile')
-
-        except stripe.error.CardError as e:
-            messages.error(request, f"Payment error: {e.user_message}")
-            return redirect('checkout')
-
-    total = sum(item['price'] * item['quantity'] for item in cart.values())
-    line_items = [
-        {
-            'price_data': {
-                'currency': 'usd',
-                'product_data': {
-                    'name': item['name'],
-                },
-                'unit_amount': int(item['price'] * 100),  # Amount in cents
-            },
-            'quantity': item['quantity'],
-        }
-        for item in cart.values()
-    ]
-
-    # Create a Stripe checkout session
-    session = stripe.checkout.Session.create(
-        payment_method_types=['card'],
-        line_items=line_items,
-        mode='payment',
-        success_url=request.build_absolute_uri('/checkout/success/'),
-        cancel_url=request.build_absolute_uri('/checkout/cancel/'),
+    total_amount = sum(item['price'] * item['quantity'] for item in cart.values())
+    
+    # Create a PaymentIntent and pass `client_secret` to template
+    intent = stripe.PaymentIntent.create(
+        amount=int(total_amount * 100),  # Stripe expects amount in cents
+        currency="usd",
     )
-
+    
+    # Calculate total for display in the template
+    total = sum(item['price'] * item['quantity'] for item in cart.values())
+    
     return render(request, 'lessons/checkout.html', {
         'cart': cart,
         'total': total,
         'stripe_public_key': settings.STRIPE_API_KEY,
-        'checkout_session_id': session.id,
+        'client_secret': intent.client_secret,  # Pass client secret to the template
     })
 
 
+@login_required
+def checkout_success(request):
+    cart = request.session.get('cart', {})
+    
+    # Update `lessons_purchased` field in StudentProfile
+    for lesson_id, item in cart.items():
+        quantity = item['quantity']
+        profile, created = StudentProfile.objects.get_or_create(
+            user=request.user,
+            defaults={'lessons_purchased': quantity}
+        )
+        if not created:
+            profile.lessons_purchased += quantity
+            profile.save()
+
+    # Clear the cart after updating lessons
+    request.session['cart'] = {}
+    request.session['cart_count'] = 0
+    request.session.modified = True
+
+    messages.success(request, "Thank you for your purchase! Your lessons have been added.")
+    return redirect('profile')
+
+
+def checkout_cancel(request):
+    return render(request, 'lessons/checkout_cancel.html')
+    
 def student_edit(request, pk):
     student = get_object_or_404(StudentProfile, pk=pk)
     
@@ -201,31 +397,11 @@ def student_edit(request, pk):
 
     return render(request, 'lessons/student_edit.html', {'form': form, 'student': student})
 
-def purchase_lesson(request, lesson_type_id):
-    # Logic for payment success
-    lesson_type = LessonType.objects.get(id=lesson_type_id)
-    user_credit, created = UserCredits.objects.get_or_create(user=request.user, lesson_type=lesson_type)
-    user_credit.credits += 1
-    user_credit.save()
-    messages.success(request, "Lesson purchased successfully!")
-    return redirect('profile')
-
-def checkout_success(request):
-    request.session['cart'] = {}  # Clear the cart
-    request.session['cart_count'] = 0
-    request.session.modified = True
-    messages.success(request, "Thank you! Your purchase was successful.")
-    return redirect('profile')  # Redirect to the profile or another page
-
 # Signal to create StudentProfile for each new user
 @receiver(post_save, sender=User)
 def create_student_profile(sender, instance, created, **kwargs):
     if created and not instance.is_superuser:
         StudentProfile.objects.create(user=instance)
-
-def checkout_cancel(request):
-    messages.error(request, "Payment was canceled.")
-    return redirect('cart')  # Redirect back to the cart
 
 def update_cart(request, lesson_id):
     if request.method == 'POST':
@@ -245,7 +421,11 @@ def update_cart(request, lesson_id):
 
 # Store View
 def store_view(request):
+    student_profile = StudentProfile.objects.get(user=request.user)
     lessons = LessonType.objects.all()
+    for lesson in lessons:
+        if lesson.duration == student_profile.lesson_duration:
+            return render(request, 'lessons/store.html', {'lesson': lesson})
     return render(request, 'lessons/store.html', {'lessons': lessons})
 
 # Signal for Profile Creation

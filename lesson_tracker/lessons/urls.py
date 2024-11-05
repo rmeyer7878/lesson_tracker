@@ -17,7 +17,6 @@ urlpatterns = [
 
     # Lesson listing and purchasing
     path('lessons/', views.lesson_list, name='lesson_list'),  # List of all available lessons
-    path('purchase/', views.purchase_lesson, name='purchase_lesson'),  # Main purchase page for selecting lessons
 
     # Store page, if separate from lesson listing
     path('store/', views.store_view, name='store'),  # Store listing all available lessons
@@ -32,4 +31,5 @@ urlpatterns = [
     path('checkout/', login_required(views.checkout_view), name='checkout'),  # Checkout page
     path('checkout/success/', views.checkout_success, name='checkout_success'),
     path('checkout/cancel/', views.checkout_cancel, name='checkout_cancel'),
+
 ]

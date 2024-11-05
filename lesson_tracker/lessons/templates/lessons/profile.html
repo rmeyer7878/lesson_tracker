@@ -1,47 +1,19 @@
-<!-- lessons/templates/lessons/profile.html -->
 {% extends 'lessons/base.html' %}
 
 {% block content %}
 <h2>Your Profile</h2>
 
-<h3>Your Lesson Credits</h3>
-{% if credits %}
-    <table>
-        <thead>
-            <tr>
-                <th>Lesson Type</th>
-                <th>Credits Available</th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for credit in credits %}
-                <tr>
-                    <td>{{ credit.lesson_type.name }}</td>
-                    <td>{{ credit.credits }}</td>
-                </tr>
-            {% endfor %}
-        </tbody>
-    </table>
-{% else %}
-    <p>You have no available lesson credits.</p>
-{% endif %}
+<h3>Total Lessons Purchased</h3>
+<p>{{ lessons_purchased }} lessons</p>
 
-<h3>Your Scheduled Lesson</h3>
-{% if scheduled_lesson  %}
-    {% if scheduled_lesson.is_cancelled %}
-        <p>
-            <strong>The following lesson has been cancelled:</strong><br>
-            <strong>Lesson Type:</strong> {{ scheduled_lesson.lesson_type.name }}<br>
-            <strong>Date:</strong> {{ scheduled_lesson.scheduled_time }}<br>
-        </p>
-    {% else %}
-        <p>
-            <strong>Lesson Type:</strong> {{ scheduled_lesson.lesson_type.name }}<br>
-            <strong>Date:</strong> {{ scheduled_lesson.scheduled_time }}<br>
-        </p>
-    {% endif %}
-
+<h3>Recurring Weekly Lesson</h3>
+{% if student_profile.day_of_week %}
+    <p>
+        Lesson Duration: {{ student_profile.lesson_duration }}<br>
+        Day: {{ student_profile.get_day_of_week_display }}<br>
+        Time: {{ student_profile.time|date:"H:i" }}
+    </p>
 {% else %}
-    <p>You do not have a lesson scheduled.</p>
+    <p>You do not have a recurring weekly lesson scheduled.</p>
 {% endif %}
 {% endblock %}

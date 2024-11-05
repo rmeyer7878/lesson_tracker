@@ -9,7 +9,7 @@ class PurchaseLessonForm(forms.ModelForm):
 class StudentForm(forms.ModelForm):
     class Meta:
         model = StudentProfile
-        fields = ['lessons_purchased', 'preferred_lesson_duration']  # Update with actual fields in StudentProfile
+        fields = ['lessons_purchased', 'lesson_duration', 'day_of_week', 'time']  # Update with actual fields in StudentProfile
         
 class UserForm(forms.ModelForm):
     class Meta:

@@ -11,17 +11,16 @@
     <thead>
         <tr>
             <th>Lesson</th>
-            <th>Quantity</th>
             <th>Price</th>
             <th>Total</th>
-            <th>Actions</th>
+            <th>Quantity</th>
+            <th>Grand Total</th>
         </tr>
     </thead>
     <tbody>
         {% for lesson_id, item in cart.items %}
         <tr>
             <td>{{ item.name }}</td>
-            <td>{{ item.quantity }}</td>
             <td>${{ item.price|floatformat:2 }}</td>
             <td>${{ item.price|mul:item.quantity|floatformat:2 }}</td>
             <td>
@@ -29,16 +28,16 @@
                 <form action="{% url 'update_cart' lesson_id=lesson_id %}" method="post">
                     {% csrf_token %}
                     <input type="number" name="quantity" value="{{ item.quantity }}" min="0">
-                    <button type="submit">Update</button>
+                    <button type="submit": style="display: inline-block; padding: 1px 10px; background-color: white; color: black; text-decoration: none; border-radius: 1px; border: 1px solid black" >Update</button>
                 </form>
             </td>
+            <td>${{ total|floatformat:2 }}</td>
         </tr>
         {% endfor %}
     </tbody>
 </table>
 
-<p><strong>Grand Total:</strong> ${{ total|floatformat:2 }}</p>
-<a href="{% url 'checkout' %}">Proceed to Checkout</a>
+<a href="{% url 'checkout' %}" style="display: inline-block; padding: 5px 20px; background-color: white; color: black; text-decoration: none; border-radius: 1px; border: 1px solid black">Proceed to Checkout</a>
 {% else %}
     <p>Your cart is empty.</p>
 {% endif %}

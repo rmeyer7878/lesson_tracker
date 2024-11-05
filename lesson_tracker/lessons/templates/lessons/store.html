@@ -7,7 +7,6 @@
 <h2>Purchase Voice Lessons</h2>
 
 <div class="lesson-grid">
-    {% for lesson in lessons %}
     <div class="lesson-card">
         <h3>{{ lesson.name }}</h3>
         <p>{{ lesson.get_duration_display }} - 
@@ -23,6 +22,5 @@
             <button type="submit">Add To Cart</button>
         </form>
     </div>
-    {% endfor %}
 </div>
-{% endblock %}
+{% endblock %} 

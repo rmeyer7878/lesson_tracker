@@ -150,3 +150,44 @@ LOGOUT_REDIRECT_URL = '/'
 
 STRIPE_API_KEY = os.getenv('STRIPE_API_KEY')
 SECRET_KEY = os.getenv('SECRET_KEY')
+
+
+# settings.py
+
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,
+    'formatters': {
+        'verbose': {
+            'format': '{levelname} {asctime} {module} {message}',
+            'style': '{',
+        },
+        'simple': {
+            'format': '{levelname} {message}',
+            'style': '{',
+        },
+    },
+    'handlers': {
+        'file': {
+            'level': 'DEBUG',  # Adjust level as needed
+            'class': 'logging.FileHandler',
+            'filename': os.path.join(BASE_DIR, 'debug.log'),
+            'formatter': 'verbose',
+        },
+    },
+    'loggers': {
+        'django': {
+            'handlers': ['file'],
+            'level': 'DEBUG',  # Adjust level as needed
+            'propagate': True,
+        },
+        'myapp': {  # Use your app name here
+            'handlers': ['file'],
+            'level': 'DEBUG',  # Adjust level as needed
+            'propagate': False,
+        },
+    },
+}
+
+SQUARE_ACCESS_TOKEN = 'your_square_access_token'
+SQUARE_ENVIRONMENT = 'sandbox'  # Use 'production' for live transactions
