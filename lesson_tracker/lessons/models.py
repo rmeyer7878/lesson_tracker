@@ -1,5 +1,6 @@
 from django.db import models
 from django.contrib.auth.models import User
+from django.utils import timezone
 
 def get_default_user():
     try:
@@ -15,8 +16,7 @@ class LessonType(models.Model):
         ('30', '30 minutes'),
         ('45', '45 minutes'),
         ('60', '60 minutes'),
-        ('0', '0 minutes'),
-        ('1', '1 minutes')
+        ('1', '1 minute')
     ])
     price = models.DecimalField(max_digits=6, decimal_places=2)
     sale_price = models.DecimalField(max_digits=6, decimal_places=2, null=True, blank=True)
@@ -31,23 +31,21 @@ class LessonType(models.Model):
     def __str__(self):
         return f"{self.name} - {self.get_duration_display()} (${self.display_price()})"
 
-# Profile extension to store additional student information
 class StudentProfile(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE, related_name="student_profile")
     lessons_purchased = models.IntegerField(default=0)
     lesson_duration = models.CharField(
         max_length=20,
-        choices=[('20', '20 minutes'), ('30', '30 minutes'), ('45', '45 minutes'), ('60', '60 minutes'), ('0', '0 minutes'), ('1', '1 minutes')],
+        choices=[('20', '20 minutes'), ('30', '30 minutes'), ('45', '45 minutes'), ('60', '60 minutes')],
         default='30'
     )
     day_of_week = models.CharField(
         max_length=20,
-        choices=[('0', 'Monday'), ('1', 'Tuesday'), ('2', 'Wednesday'), ('3', 'Thursday'), ('4','Friday')],
+        choices=[('0', 'Monday'), ('1', 'Tuesday'), ('2', 'Wednesday'), ('3', 'Thursday'), ('4', 'Friday')],
         default='0'
     )
-    
-    time = models.TimeField(default="09:00")  # Adjust default as necessary
+    time = models.TimeField(default="09:00")  # Default lesson time
+    lesson_history = models.JSONField(default=list, blank=True)  # Stores lesson history as a list of date records
 
     def __str__(self):
         return f"{self.user.username}'s Profile"
-

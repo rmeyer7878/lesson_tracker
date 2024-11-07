@@ -138,9 +138,9 @@ CELERY_ACCEPT_CONTENT = ['json']
 CELERY_TASK_SERIALIZER = 'json'
 
 CELERY_BEAT_SCHEDULE = {
-    'send-reminder-emails-every-day': {
-        'task': 'lessons.tasks.send_reminder_emails',
-        'schedule': crontab(hour=0, minute=0),  # Runs every day at midnight
+    'check_student_balances': {
+        'task': 'lessons.tasks.check_and_notify_low_balance',
+        'schedule': crontab(hour=0, minute=0),  # Every day at midnight
     },
 }
 LOGIN_URL = '/login/'
@@ -189,5 +189,10 @@ LOGGING = {
     },
 }
 
-SQUARE_ACCESS_TOKEN = 'your_square_access_token'
-SQUARE_ENVIRONMENT = 'sandbox'  # Use 'production' for live transactions
+EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+EMAIL_HOST = 'smtp.gmail.com'
+EMAIL_PORT = 587
+EMAIL_USE_TLS = True
+EMAIL_HOST_USER = 'candicemeyervocalist@gmail.com'
+EMAIL_HOST_PASSWORD = os.getenv('EMAIL_HOST_PASSWORD')
+
