@@ -1,7 +1,6 @@
 # lessons/views.py
 
 import stripe
-from django.conf import settings
 from django.shortcuts import render, get_object_or_404, redirect
 from .models import StudentProfile, LessonType
 from .forms import PurchaseLessonForm, StudentForm
@@ -14,7 +13,8 @@ from django.contrib.auth.models import User
 from django.urls import reverse
 from django.http import HttpResponseRedirect
 import logging
-
+from django.core.mail import send_mail
+from django.conf import settings
 stripe.api_key = settings.SECRET_KEY
 
 logger = logging.getLogger('myapp')  # Replace 'myapp' with the name you set in LOGGING configuration
@@ -344,6 +344,8 @@ def checkout_view(request):
     intent = stripe.PaymentIntent.create(
         amount=int(total_amount * 100),  # Stripe expects amount in cents
         currency="usd",
+        automatic_payment_methods={"enabled": True},  # Enables automatic methods, including Link
+        #payment_method_options={"link": {"enabled": False}},
     )
     
     # Calculate total for display in the template
@@ -356,20 +358,22 @@ def checkout_view(request):
         'client_secret': intent.client_secret,  # Pass client secret to the template
     })
 
-
 @login_required
 def checkout_success(request):
     cart = request.session.get('cart', {})
-    
+    total_lessons = 0  # Track the total lessons purchased for the email message
+
     # Update `lessons_purchased` field in StudentProfile
     for lesson_id, item in cart.items():
         quantity = item['quantity']
+        total_lessons += quantity  # Add to total lessons for the email message
         profile, created = StudentProfile.objects.get_or_create(
             user=request.user,
             defaults={'lessons_purchased': quantity}
         )
         if not created:
             profile.lessons_purchased += quantity
+            profile.lesson_history = []
             profile.save()
 
     # Clear the cart after updating lessons
@@ -377,8 +381,32 @@ def checkout_success(request):
     request.session['cart_count'] = 0
     request.session.modified = True
 
+    # Send email notification
+    send_purchase_email(request.user, total_lessons)
+
     messages.success(request, "Thank you for your purchase! Your lessons have been added.")
     return redirect('profile')
+
+def send_purchase_email(user, total_lessons):
+    subject = "Your Lesson Purchase Confirmation"
+    message = (
+        f"Dear {user.first_name},\n\n"
+        f"Thank you for your purchase! You have successfully added {total_lessons} lessons to your account.\n"
+        "We look forward to helping you achieve your vocal goals.\n\n"
+        "Best regards,\n"
+        "Candice Meyer Vocal Studio"
+    )
+    recipient_email = user.email
+    from_email = settings.DEFAULT_FROM_EMAIL
+
+    # Send the email
+    send_mail(
+        subject,
+        message,
+        from_email,
+        [recipient_email],
+        fail_silently=False,
+    )
 
 
 def checkout_cancel(request):
@@ -419,14 +447,28 @@ def update_cart(request, lesson_id):
 
     return redirect('cart')
 
-# Store View
+# # Store View
+# def store_view(request):
+#     student_profile = StudentProfile.objects.get(user=request.user)
+#     lessons = LessonType.objects.all()
+#     for lesson in lessons:
+#         if lesson.duration == student_profile.lesson_duration:
+#             return render(request, 'lessons/store.html', {'lesson': lesson})
+#     return render(request, 'lessons/store.html', {'lessons': lessons})
+
 def store_view(request):
     student_profile = StudentProfile.objects.get(user=request.user)
-    lessons = LessonType.objects.all()
-    for lesson in lessons:
-        if lesson.duration == student_profile.lesson_duration:
-            return render(request, 'lessons/store.html', {'lesson': lesson})
+    # Filter lessons based on the student's preferred lesson duration
+    filtered_lessons = LessonType.objects.filter(duration=student_profile.lesson_duration)
+    
+    # If no matching lessons found, fall back to all lessons
+    if not filtered_lessons.exists():
+        lessons = LessonType.objects.all()
+    else:
+        lessons = filtered_lessons
+
     return render(request, 'lessons/store.html', {'lessons': lessons})
+
 
 # Signal for Profile Creation
 @receiver(post_save, sender=User)
