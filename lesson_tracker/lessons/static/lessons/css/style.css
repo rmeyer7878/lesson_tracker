@@ -374,3 +374,61 @@ footer {
 .sign-out-text a:hover {
     text-decoration: underline;
 }
+
+/* Increase the font size of the calendar event text */
+.fc-event {
+    font-size: 1.2rem; /* Adjust the size as needed */
+    padding: 5px;
+}
+
+/* Optionally increase the time labels font size */
+.fc-timegrid-slot-label {
+    font-size: 1.1rem;
+}
+
+
+/* Calendar Event Styling */
+.fc-event {
+    font-size: 1.4rem; /* Increase the font size further */
+    font-weight: bold; /* Make the text bold */
+    padding: 8px; /* Increase padding for better spacing */
+    background-color: #b0c4de; /* Light blue background for visibility */
+    border: 1px solid #0056b3; /* Add a border for better definition */
+    color: #333; /* Dark text color for contrast */
+    border-radius: 4px; /* Round corners for a modern look */
+}
+
+/* Increase the font size for time labels */
+.fc-timegrid-slot-label {
+    font-size: 1.3rem; /* Larger font size for time labels */
+    font-weight: bold;
+    color: #333; /* Ensure the color is dark for readability */
+}
+
+/* Increase font size for the day headers */
+.fc-col-header-cell {
+    font-size: 1.2rem;
+    font-weight: bold;
+}
+
+/* Adjust the height of the calendar for better visibility */
+.fc .fc-timegrid {
+    min-height: 600px; /* Ensure the calendar has enough height */
+}
+
+/* Adjust the appearance of the calendar grid slots */
+.fc-timegrid-slot {
+    background-color: #f4f4f9; /* Light background for slots */
+}
+
+/* Ensure these styles override FullCalendar defaults */
+/* Ensure these styles override FullCalendar defaults */
+.fc-event {
+    font-size: 1.4rem !important;
+    padding: 10px !important;
+    background-color: #b0c4de !important;
+    color: #333 !important;
+    border: 1px solid #0056b3 !important;
+    border-radius: 4px !important;
+}
+

@@ -1,5 +1,6 @@
 from django.urls import path
 from . import views
+from .views import shared_calendar_view, lessons_api
 from django.contrib.auth.decorators import login_required, user_passes_test
 
 urlpatterns = [
@@ -17,6 +18,8 @@ urlpatterns = [
 
     # Lesson listing and purchasing
     path('lessons/', views.lesson_list, name='lesson_list'),  # List of all available lessons
+    path('calendar/', shared_calendar_view, name='shared_calendar'),
+    path('api/lessons/', lessons_api, name='lessons_api'),
 
     # Store page, if separate from lesson listing
     path('store/', views.store_view, name='store'),  # Store listing all available lessons

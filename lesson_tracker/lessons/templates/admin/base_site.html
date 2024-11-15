@@ -1,0 +1,6 @@
+{% extends "admin/base.html" %}
+{% block content %}
+<h1>Welcome to the Admin Dashboard</h1>
+<p><a href="{% url 'shared_calendar' %}">View Shared Calendar</a></p>
+{{ block.super }}
+{% endblock %}

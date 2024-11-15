@@ -3,17 +3,49 @@
 {% block content %}
 <h2>Your Profile</h2>
 
-<h3>Total Lessons Purchased</h3>
-<p>{{ lessons_purchased }} lessons</p>
+{% load custom_filters %}
+<table>
+    <thead>
+        <tr>
+            <th>Total Lesson Balance</th>
+            <th>Recurring Weekly Lesson</th>
+            <th>Lesson Duration</th>
+            <th>Day</th>
+            <th>Time</th>
+        </tr>
+    </thead>
+    <tbody>
+        <tr>
+            <td>{{ lessons_purchased }} Lessons</td>
+            {% if student_profile.day_of_week %}
+                <td>                 
+                    <p>Yes</p>
+                </td>
+                <td>                 
+                    {{ student_profile.lesson_duration }} Minutes
+                </td>
+                <td>                 
+                    {{ student_profile.get_day_of_week_display }}
+                </td>
+                <td>                 
+                    {{ student_profile.time|date:"H:i" }}
+                </td>                    
+                {% else %}
+                    <td>                 
+                        <p>No</p>
+                    </td>
+                    <td>                       
+                        <p></p>
+                    </td>
+                    <td>                       
+                        <p></p>
+                    </td>
+                    <td>                 
+                        <p></p>
+                    </td>                 
+                {% endif %}
+        </tr>
+    </tbody>
+</table>
 
-<h3>Recurring Weekly Lesson</h3>
-{% if student_profile.day_of_week %}
-    <p>
-        Lesson Duration: {{ student_profile.lesson_duration }}<br>
-        Day: {{ student_profile.get_day_of_week_display }}<br>
-        Time: {{ student_profile.time|date:"H:i" }}
-    </p>
-{% else %}
-    <p>You do not have a recurring weekly lesson scheduled.</p>
-{% endif %}
 {% endblock %}

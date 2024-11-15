@@ -84,7 +84,7 @@ class StudentProfile(models.Model):
     time = models.TimeField(default="09:00")
     
     # Fields for custom email messages
-    lesson_history = models.JSONField(default=list, blank=True)  # Stores lesson history as a list of date records
+    lesson_history = models.JSONField(default=list, blank=True, null=True)
 
     def __str__(self):
         return f"{self.user.username}'s Profile"
